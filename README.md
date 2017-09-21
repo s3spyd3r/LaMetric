@@ -1,5 +1,5 @@
 # LaMetric
-Set of LaMetric App's based on php scripts
+Set of LaMetric App's based on php scripts (http://www.lametric.com)
 
 ## MyAnimeList Episodes Counter
 Display the total anime episodes watched from your MyAnimeList Profile.
