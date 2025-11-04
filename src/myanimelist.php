@@ -1,27 +1,40 @@
 <?php
 
-const myAnimeListServer = "https://myanimelist.net/profile/";
+const URL_BASE = 'https://myanimelist.net/profile/';
 
-try {
+$user = $_GET['profile'] ?? null;
+$user = filter_var($user, FILTER_SANITIZE_STRING);
 
-    $user = isset($_GET['profile']) ? strip_tags($_GET['profile']) : false;
-
-    if($user) {
-
-        $result = file_get_contents(myAnimeListServer.$user);
-
-        if(isset($result))
-        {
-            $result = substr($result, strpos($result,"Episodes</span>") + 15);
-            $result = substr($result, strpos($result, ">") + 1);
-            $result = substr($result, 0, strpos($result, "</span"));
-            $total = str_replace(",","", $result);
-
-            echo "{\"frames\":[{\"icon\":\"i13457\",\"text\":\"$total\"}]}";
-        }
-    }
-
-}catch (Exception $ex)
-{
-    echo "{\"frames\":[{\"icon\":\"i13457\",\"text\":\"$ex->getMessage()\"}]}";
+if (empty($user)) {
+    echo json_encode([
+        'frames' => [
+            ['icon' => 'i13457', 'text' => 'No profile provided']
+        ]
+    ]);
+    exit;
 }
+
+$url = URL_BASE . urlencode($user);
+
+$html = @file_get_contents($url);
+if ($html === false) {
+    echo json_encode([
+        'frames' => [
+            ['icon' => 'i13457', 'text' => 'Failed to fetch profile']
+        ]
+    ]);
+    exit;
+}
+
+if (preg_match('/Episodes<\/span>\s*<span[^>]*>([^<]+)<\/span>/i', $html, $matches)) {
+    $episodes = trim($matches[1]);
+    $total = str_replace(',', '', $episodes);
+} else {
+    $total = 'N/A';
+}
+
+echo json_encode([
+    'frames' => [
+        ['icon' => 'i13457', 'text' => $total]
+    ]
+]);
