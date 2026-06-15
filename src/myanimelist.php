@@ -1,40 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 const URL_BASE = 'https://myanimelist.net/profile/';
 
-$user = $_GET['profile'] ?? null;
-$user = filter_var($user, FILTER_SANITIZE_STRING);
+$raw = $_GET['profile'] ?? null;
+$user = is_string($raw) ? trim($raw) : '';
 
-if (empty($user)) {
+if ($user === '') {
     echo json_encode([
         'frames' => [
-            ['icon' => 'i13457', 'text' => 'No profile provided']
-        ]
-    ]);
+            ['icon' => 'i13457', 'text' => 'No profile provided'],
+        ],
+    ], JSON_THROW_ON_ERROR);
     exit;
 }
 
-$url = URL_BASE . urlencode($user);
+$html = @file_get_contents(URL_BASE . urlencode($user));
 
-$html = @file_get_contents($url);
 if ($html === false) {
     echo json_encode([
         'frames' => [
-            ['icon' => 'i13457', 'text' => 'Failed to fetch profile']
-        ]
-    ]);
+            ['icon' => 'i13457', 'text' => 'Failed to fetch profile'],
+        ],
+    ], JSON_THROW_ON_ERROR);
     exit;
 }
 
-if (preg_match('/Episodes<\/span>\s*<span[^>]*>([^<]+)<\/span>/i', $html, $matches)) {
-    $episodes = trim($matches[1]);
-    $total = str_replace(',', '', $episodes);
-} else {
-    $total = 'N/A';
-}
+$total = preg_match('/Episodes<\/span>\s*<span[^>]*>([^<]+)<\/span>/i', $html, $m) === 1
+    ? str_replace(',', '', trim($m[1]))
+    : 'N/A';
 
 echo json_encode([
     'frames' => [
-        ['icon' => 'i13457', 'text' => $total]
-    ]
-]);
+        ['icon' => 'i13457', 'text' => $total],
+    ],
+], JSON_THROW_ON_ERROR);
